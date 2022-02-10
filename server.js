@@ -75,16 +75,55 @@ function mainMenu() {
         });
 }
 
+// read all departments
 function viewAllDepartments() {
-
+    const sql = `SELECT * 
+    FROM department 
+    ORDER BY name`;
+    
+    db.query(sql, (err, result) => {
+        if (err) {
+            throw err;
+        }
+        console.table(result);
+        mainMenu();
+    });
 }
 
+// read all roles
 function viewAllRoles() {
-
+    const sql = `SELECT role.id, role.title, department.name AS department, role.salary 
+    FROM role 
+    LEFT JOIN department 
+    ON role.department_id = department.id`;
+    
+    db.query(sql, (err, result) => {
+        if (err) {
+            throw err;
+        }
+        console.table(result);
+        mainMenu();
+    });
 }
 
+// read all employees
 function viewAllEmployees() {
-
+    const sql = `SELECT emp.id, emp.first_name, emp.last_name, role.title, department.name AS department, role.salary, CONCAT (manager.first_name, ' ', manager.last_name) AS manager
+    FROM employee emp
+    LEFT JOIN employee manager
+    ON emp.manager_id = manager.id
+    LEFT JOIN role
+    ON emp.role_id = role.id
+    LEFT JOIN department
+    ON role.department_id = department.id`;
+    
+    db.query(sql, (err, result) => {
+        if (err) {
+            throw err;
+        }
+        console.table(result);
+        mainMenu();
+    });
 }
 
 function addDepartment() {
