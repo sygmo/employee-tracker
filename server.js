@@ -126,14 +126,89 @@ function viewAllEmployees() {
     });
 }
 
+// create new department
 function addDepartment() {
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                name: "deptName",
+                message: "What is the name of the department?"
+            }
+        ])
+        .then((response) => {
+            const sql = `INSERT INTO department (name) 
+            VALUES (?)`
+            const params = [response.deptName];
 
+            db.query(sql, params, (err, res) => {
+                if (err) {
+                    throw err;
+                }
+                console.log(`Added ${response.deptName} to the database`);
+                mainMenu();
+            });
+        });
 }
 
+// create new role
 function addRole() {
+    const sql = `SELECT * FROM department`;
+    db.query(sql, (err, res) => {
+        if (err) throw err;
+        let departments = [];
+        // populate array of department names
+        res.forEach((department) => departments.push(department.name));
 
+        inquirer
+            .prompt([
+                {
+                    type: "input",
+                    name: "roleName",
+                    message: "What is the name of the role?"
+                },
+                {
+                    type: "input",
+                    name: "roleSalary",
+                    message: "What is the salary of the role?",
+                    validate(value) {
+                        const valid = !isNaN(parseInt(value));
+                        return valid || 'Please enter a number.';
+                    }
+                },
+                {
+                    type: 'list',
+                    name: 'roleDept',
+                    message: "Which department does the role belong to?",
+                    choices: departments
+                }
+            ])
+            .then((response) => {
+                // get id for department
+                let deptId;
+                res.forEach((department) => {
+                    if (department.name === response.roleDept) {
+                        deptId = department.id;
+                    }
+                });
+
+                const sql = `INSERT INTO role (title, salary, department_id) 
+                VALUES (?, ?, ?)`
+                const params = [response.roleName, response.roleSalary, deptId];
+
+                db.query(sql, params, (err, res) => {
+                    if (err) {
+                        throw err;
+                    }
+                    console.log(`Added ${response.roleName} to the database`);
+                    mainMenu();
+                });
+            });
+    });
+    
 }
 
+// create new employee
 function addEmployee() {
 
 }
