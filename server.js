@@ -153,6 +153,7 @@ function addDepartment() {
 
 // create new role
 function addRole() {
+    // get department data to use as prompt choices
     const sql = `SELECT * FROM department`;
     db.query(sql, (err, res) => {
         if (err) throw err;
@@ -210,7 +211,85 @@ function addRole() {
 
 // create new employee
 function addEmployee() {
+    // get arrays of potential managers
+    // one with id and name data, another with only names
+    let managers = ["None"];
+    let managerData = [];
+    const managerSql = `SELECT id, CONCAT (first_name, ' ', last_name) AS name 
+    FROM employee;`
+    db.query(managerSql, (err, res) => {
+        if (err) throw err;
+        res.forEach((emp) => {
+            managers.push(emp.name);
+            managerData.push(emp);
+        });
+    });
 
+    // get roles data to use as prompt choices
+    const sql = `SELECT * FROM role`;
+    db.query(sql, (err, res) => {
+        if (err) throw err;
+        let roles = [];
+        // populate array of role titles
+        res.forEach((role) => roles.push(role.title));
+
+        inquirer
+            .prompt([
+                {
+                    type: "input",
+                    name: "firstName",
+                    message: "What is the employee's first name?"
+                },
+                {
+                    type: "input",
+                    name: "lastName",
+                    message: "What is the employee's last name?"
+                },
+                {
+                    type: 'list',
+                    pageSize: roles.length,
+                    name: 'empRole',
+                    message: "Which is the employee's role?",
+                    choices: roles
+                },
+                {
+                    type: 'list',
+                    pageSize: managers.length,
+                    name: 'empManager',
+                    message: "Who is the employee's manager?",
+                    choices: managers
+                }
+            ])
+            .then((response) => {
+                // get id for department
+                let roleId;
+                res.forEach((role) => {
+                    if (role.title === response.empRole) {
+                        roleId = role.id;
+                    }
+                });
+
+                // get id for manager
+                let managerId;
+                managerData.forEach((manager) => {
+                    if (manager.name === response.empManager) {
+                        managerId = manager.id;
+                    }
+                })
+
+                const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) 
+                VALUES (?, ?, ?, ?)`
+                const params = [response.firstName, response.lastName, roleId, managerId];
+
+                db.query(sql, params, (err, res) => {
+                    if (err) {
+                        throw err;
+                    }
+                    console.log(`Added ${response.firstName} ${response.lastName} to the database`);
+                    mainMenu();
+                });
+            });
+    });
 }
 
 function updateEmployeeRole() {
